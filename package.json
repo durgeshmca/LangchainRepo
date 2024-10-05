@@ -1,0 +1,50 @@
+{
+  "name": "dummyjson",
+  "version": "0.1.0",
+  "main": "index.js",
+  "author": "Muhammad Ovi <contact@muhammadovi.com>",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "env-cmd -f config/dev.env nodemon index.js",
+    "minify-public-js-watch": "node scripts/minify-and-watch-public-js-files.js",
+    "public:use-dev": "node scripts/switch-public-url.js --target \"http://localhost:3000/public\" --source \"https://assets.dummyjson.com/public\"",
+    "public:use-cdn": "node scripts/switch-public-url.js --target \"https://assets.dummyjson.com/public\" --source \"http://localhost:3000/public\""
+  },
+  "engines": {
+    "node": ">=18.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.485.0",
+    "color-convert": "^2.0.1",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "express-rate-limit": "^5.4.1",
+    "helmet": "3.21.1",
+    "jdenticon": "^3.3.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^3.3.2",
+    "mongoose": "^8.4.4",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "on-finished": "^2.3.0",
+    "on-headers": "^1.0.2",
+    "sharp": "0.31.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "chokidar": "^3.6.0",
+    "env-cmd": "^10.1.0",
+    "eslint": "7.5",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^6.3.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-prettier": "^3.1.1",
+    "nodemon": "^2.0.15",
+    "prettier": "^1.18.2",
+    "uglify-js": "^3.17.4"
+  }
+}
