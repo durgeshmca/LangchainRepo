@@ -1,0 +1,4 @@
+validators
+youtube-transcript-api
+pytube
+unstructured
