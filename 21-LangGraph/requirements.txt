@@ -1,0 +1,6 @@
+langgraph
+serpapi
+google-search-results>=2.4.2
+langchain
+cassio
+# langsmith
