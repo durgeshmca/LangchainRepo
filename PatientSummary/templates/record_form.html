@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder</title>
+    <style>
+        /* CSS for styling */
+    </style>
+</head>
+<body>
+    <button id="record-button">Record</button>
+    <p id="recording-status"></p>
+
+    <script>
+        let recording = false;
+        let audioChunks = [];
+
+        document.getElementById('record-button').addEventListener('click', () => {
+            if (!recording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        function startRecording() {
+            recording = true;
+            document.getElementById('record-button').innerHTML = 'Stop';
+            document.getElementById('recording-status').innerHTML = 'Recording...';
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    const mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    mediaRecorder.start();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function stopRecording() {
+            recording = false;
+            document.getElementById('record-button').innerHTML = 'Record';
+            document.getElementById('recording-status').innerHTML = '';
+
+            mediaRecorder.stop();
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); 
+
+                // Send audio data to server for encoding
+                const formData = new FormData();
+                formData.append('audioFile', audioBlob); 
+
+                fetch('/encode_audio', { 
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    // Handle server response (e.g., download link, success/error message)
+                    console.log('Encoding successful'); 
+                })
+                .catch(error => {
+                    console.error('Error encoding audio on server:', error);
+                });
+            };
+        }
+    </script>
+</body>
+</html>
