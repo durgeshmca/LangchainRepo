@@ -7,6 +7,8 @@ import json
 import os
 from dotenv import load_dotenv
 from groq import Groq
+from pydub import AudioSegment
+import math
 
 load_dotenv()
 
@@ -18,6 +20,29 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+def split_audio(file_path, segment_length=10*60*1000):  # 29 minutes in milliseconds
+    # Load the audio file
+    audio = AudioSegment.from_file(file_path)
+    
+    # Get the total length of the audio file
+    total_length = len(audio)
+    
+    # Calculate the number of segments needed
+    num_segments = math.ceil(total_length / segment_length)
+
+    # Loop through and create each segment
+    for i in range(num_segments):
+        start_time = i * segment_length
+        end_time = min((i + 1) * segment_length, total_length)  # Ensure the last segment does not exceed total length
+        segment = audio[start_time:end_time]
+
+        # Generate the output file name
+        output_file = f"{file_path[:-4]}_part{i+1}.mp3"
+        
+        # Export the segment as an MP3 file
+        segment.export(output_file, format="mp3")
+        print(f"Exported: {output_file}")
 
 @app.route('/summary', methods=['POST'])
 def upload_audio_file():
@@ -99,7 +124,7 @@ def speech_to_text():
             file= (filename,f.read()),
             model="whisper-large-v3",
             temperature=0.06,
-            prompt= "You are an helpful assistant of a Doctor. Write response like a play script.",
+            prompt= "You are an helpful assistant.You will be given a conversation script. Language of conversation may be in Hindi or English or both. Write response like a play script.",
             language="en",
             response_format="verbose_json",
             )
@@ -132,7 +157,159 @@ def summarize():
                     response_format={"type": "json_object"},
                     stop=None,
                 )
-                return jsonify({"message":context.get("context"),"summary":completion.choices[0].message.model_dump()}), 200
+                data = completion.choices[0].message.model_dump_json()
+                data_dict = json.loads(data)
+                content_dict = json.loads(data_dict['content'])
+                return jsonify({"message":context.get("context"),"summary":content_dict}), 200
+                # for chunk in completion:
+                #     print(chunk.choices[0].delta.content or "", end="")
+
+@app.post("/meeting_summary")
+def summarize_meeting():
+    context = request.get_json()
+    # return context
+    if context:
+                # create summary for patient
+                client = Groq()
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an helpful assistant. You will be given an script of meeting conversation. Based on the conversation create bullet points.Response must be in JSON format and it must contain only two key named `title` and `content`. Value of content must be a text based summary."
+                        },
+                        {
+                            "role": "user",
+                            "content": context.get("context")
+                        }
+                    ],
+                    temperature=1,
+                    max_tokens=20240,
+                    top_p=1,
+                    stream=False,
+                    response_format={"type": "json_object"},
+                    stop=None,
+                )
+                data = completion.choices[0].message.model_dump_json()
+                data_dict = json.loads(data)
+                content_dict = json.loads(data_dict['content'])
+
+                return jsonify({"message":context.get("context"),"summary":content_dict}), 200
+                # for chunk in completion:
+                #     print(chunk.choices[0].delta.content or "", end="")
+@app.post("/extract_values")
+def extract_data():
+    data_to_extract = '''
+    name
+    age
+    gender
+    occupation
+    status
+    religion
+    mother_tongue
+    address
+    phone
+    way_of_sitting
+    expressions
+    complaint_start
+    initial_symptoms
+    onset
+    complaint_side
+    cross_wise_affections
+    pain_duration
+    modalities
+    probable_diagnosis
+    major_illnesses
+    predominant
+    journey_of_disease
+    hereditary_illnesses
+    menses_details
+    menarche
+    menopause
+    abortions
+    medications
+    drug_allergies
+    investigations
+    built
+    body_structure
+    face
+    hairs
+    complexion
+    warts_moles
+    frown
+    discolouration
+    appetite
+    drinks
+    cravings_aversion
+    food_drink_agg_amel
+    thirst
+    perspiration
+    stools
+    urine
+    thermals
+    sleep
+    dreams
+    speed
+    side
+    gen_sensitivity
+    senses
+    habits
+    living_situation
+    education
+    expressiveness
+    intellect
+    conscientiousness
+    morals
+    memory
+    will
+    reaction_in_crisis
+    nature_disposition
+    emotional_reactions
+    anger_behavior
+    sensitivity
+    emotional_sensitivity
+    anticipation_Apprehension
+    fears
+    childhood_history
+    infants_to_toddlers
+    school_going_children
+    college_students
+    middle_age
+    old_age
+    summary
+'''
+
+    context = request.get_json()
+    # return context
+    if context:
+                # create summary for patient
+                client = Groq()
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": '''You are an expert in data parsing. You will be given an script of meeting conversation. Based on the conversation try to extract following information.''' + data_to_extract + '''
+                            Prepare a JSON object with the key above and values as extracted values. Response must be in JSON format only.
+                            '''
+                        },
+                        {
+                            "role": "user",
+                            "content": context.get("context")
+                        }
+                    ],
+                    temperature=1,
+                    max_tokens=20240,
+                    top_p=1,
+                    stream=False,
+                    response_format={"type": "json_object"},
+                    stop=None,
+                )
+                data = completion.choices[0].message.model_dump_json()
+                data_dict = json.loads(data)
+                content_dict = json.loads(data_dict['content'])
+
+                return jsonify({"context":context.get("context"),"data":content_dict}), 200
                 # for chunk in completion:
                 #     print(chunk.choices[0].delta.content or "", end="")
 @app.route('/', methods=['GET'])
@@ -170,4 +347,5 @@ def download_file(filename):
 
 
 if __name__ == '__main__':
+    split_audio("uploads/audio1516611971.m4a")
     app.run(debug=True,host="0.0.0.0",port=8000)
