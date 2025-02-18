@@ -183,7 +183,7 @@ def summarize_meeting():
                             "content": context.get("context")
                         }
                     ],
-                    temperature=1,
+                    temperature=0.5,
                     max_tokens=20240,
                     top_p=1,
                     stream=False,
@@ -317,35 +317,53 @@ def home():
     return render_template('index.html')
 
 
-@app.route('/encode_audio', methods=['POST'])
-def upload_file():
-    if 'audioFile' not in request.files:
-        return {'error': 'No audio file part'}, 400
+@app.post("/form_values")
+def get_form_data():
+    
+    extraction_list = request.form.get('extract_values_for').split(",")
+    # print(extraction_list)
+    # extraction_list = json_data['extract_values_for']
+    data_to_extract = ', '.join(extraction_list)
+    # print(data_to_extract)
+    # return {'x':data_to_extract}
+    # return context
+    text_data,response_code = speech_to_text()
+    # print(text_data.get_json())
+    context = text_data.get_json().get('message')
+    # return {'hi','hello'}
+    # context = text_data.get('message')
+    if context:
+                # create summary for patient
+                client = Groq()
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": '''You are an expert in data parsing. You will be given an script of meeting conversation. Based on the conversation try to extract following information.''' + data_to_extract + '''
+                            Prepare a JSON object with the key above and values as extracted values. Response must be in JSON format only.
+                            '''
+                        },
+                        {
+                            "role": "user",
+                            "content": context
+                        }
+                    ],
+                    temperature=1,
+                    max_tokens=20240,
+                    top_p=1,
+                    stream=False,
+                    response_format={"type": "json_object"},
+                    stop=None,
+                )
+                data = completion.choices[0].message.model_dump_json()
+                data_dict = json.loads(data)
+                content_dict = json.loads(data_dict['content'])
 
-    file = request.files['audioFile']
-
-    if file.filename == '':
-        return {'error': 'No selected file'}, 400
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = f'./uploads/{filename}'
-        file.save(filepath)
-
-        # Use FFmpeg for encoding (replace with your preferred library)
-        try:
-            run(['ffmpeg', '-i', filepath, f'./output/{filename}.webm'], check=True)
-            return {'message': 'Encoding successful!'}, 200
-        except Exception as e:
-            return {'error': f'Encoding failed: {e}'}, 500
-
-    return {'error': 'Invalid file type'}, 400
-
-@app.route('/download/<filename>.webm')
-def download_file(filename):
-    return send_from_directory('output', f'{filename}.webm')
+                return jsonify({"context":context,"data":content_dict}), 200
+                
 
 
 if __name__ == '__main__':
-    split_audio("uploads/audio1516611971.m4a")
+    # split_audio("uploads/audio1516611971.m4a")
     app.run(debug=True,host="0.0.0.0",port=8000)
