@@ -51,9 +51,32 @@ class UserBase(BaseModel):
 class UserInDB(UserBase):
     password: str
 
+class UserCreate(BaseModel):
+    first_name: str 
+    last_name: str | None = None
+    mobile: str 
+    email: str 
+    password: str
+    
+
 def get_user_by_username(session:Session,username:str):
     statement = select(User).where(User.email == username)
     user = session.exec(statement).first()
     return user
 
 
+def create_user(session:Session,user : UserCreate):
+    new_user = User(
+        user_uuid=None,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        mobile=user.mobile,
+        email=user.email,
+        password=user.password
+    )
+
+    with  session:
+        session.add(new_user)
+        session.commit()
+        session.refresh(new_user)
+        return new_user
