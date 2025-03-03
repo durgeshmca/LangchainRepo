@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 class Chat_History(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    session_id : uuid.UUID = Field( unique=True,index=True)
+    session_id : uuid.UUID = Field(index=True)
     message:  dict = Field(sa_type=JSONB, nullable=False)
     created_at : datetime.datetime | None = Field(sa_column=Column(
         TIMESTAMP(timezone=True),
