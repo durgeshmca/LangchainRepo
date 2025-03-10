@@ -12,3 +12,4 @@ fastapi
 pyjwt
 passlib[bcrypt]
 sqlmodel
+python-multipart

@@ -10,4 +10,4 @@ vectore_store = VectorStore(
     embeddings=HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2')
 )
 
-document_retriver_tool = vectore_store.get_retriver_tool()
+chat_retriever_tool = vectore_store.get_chat_retriever_tool()
