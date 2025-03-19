@@ -10,6 +10,7 @@ llm = ChatGroq(model="llama-3.3-70b-versatile")
 prompt = ChatPromptTemplate.from_messages([
     ("system",
      "You are a helpfull assistant."
+     "Remember my name is {user_name} and my email id is {user_email}. Respond greeting message with name."
      "Make sure to use `document_search` tool for searching information from PDF document."
      "If you can not find information from `document_search` tool then use `search_tool` to get the information from web."),
      ("placeholder","{chat_history}"),
