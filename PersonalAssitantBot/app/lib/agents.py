@@ -4,13 +4,13 @@ from langchain.agents import create_tool_calling_agent,AgentExecutor
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from app.lib.chat_histories import PostgresChatMessageHistoryStore
 from app.tools import tools
+from app.config import Config
 # initialize the LLM
-llm = ChatGroq(model="llama-3.3-70b-versatile")
+llm = ChatGroq(model="compound-beta",api_key=Config.GROQ_API_KEY)
 # prompt 
 prompt = ChatPromptTemplate.from_messages([
     ("system",
      "You are a helpfull assistant."
-     "Remember my name is {user_name} and my email id is {user_email}. Respond greeting message with name."
      "Make sure to use `document_search` tool for searching information from PDF document."
      "If you can not find information from `document_search` tool then use `search_tool` to get the information from web."),
      ("placeholder","{chat_history}"),

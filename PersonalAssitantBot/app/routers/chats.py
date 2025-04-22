@@ -28,7 +28,7 @@ async def chat_message(
                 else:
                         raise Exception("Only PDF files are supported at the moment.")
                 
-        response = response = agent_with_history.invoke(
+        response = agent_with_history.invoke(
             {"input": chat.message,"user_name":current_user.first_name, "user_email":current_user.email},
             config={"configurable": {"session_id": str(current_user.user_uuid)}},
         )
